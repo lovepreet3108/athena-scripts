@@ -1,0 +1,54 @@
+To create DB ------------------------
+
+-> CREATE DATABASE devapiaccesslogs;
+
+To Create table ------- This script creates table with the present at location passed.
+NOTE : We have created the columns by giving ' ' as a delimiter. Each log entry data will be divided into columns based upon the delimiter.
+
+-> create external table devapiaccesslogs.tblaccesslogseumay(
+protocol STRING,
+timestamp STRING,
+lb STRING,
+external_ip STRING,
+internal_ip STRING,
+f6 STRING,
+f7 STRING,
+f8 STRING,
+f9 STRING,
+f10 STRING,
+f11 STRING,
+f12 STRING,
+URl STRING,
+f14 STRING,
+f15 STRING,
+f16 STRING,
+f17 STRING,
+f18 STRING,
+f19 STRING,
+f20 STRING,
+f21 STRING,
+datetime STRING,
+f23 STRING,
+f24 STRING,
+f25 STRING)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ' '
+LOCATION 's3://eu-lb-logs-public/test-lb/AWSLogs/909374411237/elasticloadbalancing/eu-west-1/2019/05';
+-------------------
+
+Access logs format : {https 2019-07-14T23:55:00.491367Z app/sg-public-lb/9c901ecc0c2b4e58 36.73.195.9:55148 
+10.3.110.42:80 0.000 0.116 0.000 200 200 374 12030 "GET https://www.martjack.com:443/DeveloperAPI/Order/c74aaa70-65d4-49d1-940f-8339e29ae643/8426025?oauth_consumer_key=8QXDBZSA&oauth_nonce=4497393&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1563148498&oauth_version=1.0&oauth_signature=JdHE8D4OHd5GyGnxd%2FxQbUJbbM4%3D HTTP/1.1"
+ "-" ECDHE-RSA-AES128-GCM-SHA256 TLSv1.2 arn:aws:elasticloadbalancing:ap-southeast-1:909374411237:targetgroup/sg-devapi-cart-order/39e406c411d582b4 
+ "Root=1-5d2bc0d4-55502cf07ec72d58874778eb" "www.martjack.com" "session-reused" 14 2019-07-14T23:55:00.374000Z "forward" "-" "-"}
+
+NOTE : Here the URL data is coming in the column number 14, so we have taken it and applied string operation over it to get the data in the 
+required format. Here we have filtering out devapi calls for order. 
+
+To fetch data for order Devapi calls with count ------------------------
+
+-> select count(*),regexp_replace(regexp_replace(substr(f14,1,strpos(f14,'?')),'[a-z0-9-]{36}','MerchantID'), '[0-9]{5,}', 'orderid') as URL from tblaccesslogs where lower(f14) like '%developerapi/order%'group by regexp_replace(regexp_replace(substr(f14,1,strpos(f14,'?')),'[a-z0-9-]{36}','MerchantID'), '[0-9]{5,}', 'orderid’);
+
+Create table from existing table--------------- 
+
+-> CREATE TABLE IF NOT EXISTS devapiaccesslogs.DummyTablejuly2
+ AS
+select (regexp_replace(regexp_replace(substr(f14,1,strpos(f14,'?')),'[a-z0-9-]{36}','MerchantID'), '[0-9]{5,}', 'orderid')) as URL from devapiaccesslogs.tblaccesslogs where lower(f14) like '%developerapi/order%';
